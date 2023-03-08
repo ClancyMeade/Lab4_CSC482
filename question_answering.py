@@ -1,5 +1,5 @@
 import nltk 
-import re
+import time
 
 class QA_System: 
     def __init__(self): 
@@ -11,7 +11,6 @@ class QA_System:
             "restaurant" : "name",
             "restaurants" : "name",
             "where": "name",
-
         }
     
     def load_conditions(): 
@@ -60,14 +59,19 @@ class QA_System:
         for i in range(0,len(tokens)): 
             word = tokens[i]
             new_condition = None
-            if word == "open" or word == "opens":
+            if "open" in word:
                 time_condition = self.get_time_condition(tokens[i:])
-                new_condition = time_condition + " BETWEEN open AND close"  
-            elif word == "close" or word == "closed":
+                if time_condition is None:
+                    t = time.localtime(time.time())
+                    time_condition = t.tm_hour + t.tm_min/60 #current time
+                new_condition = str(time_condition) + " BETWEEN open AND close"  
+            elif "clos" in word:
                 time_condition = self.get_time_condition(tokens[i:])
-                new_condition = time_condition + " NOT BETWEEN open AND close" 
-            
-            if word in self.conditions: 
+                if time_condition is None:
+                    t = time.localtime(time.time())
+                    time_condition = t.tm_hour + t.tm_min/60 #current time
+                new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
+            elif word in self.conditions: 
                 column = self.conditions[word]
                 new_condition = column + ' = ' + word
 
@@ -76,7 +80,7 @@ class QA_System:
                     where_condition +=  new_condition
                 else: 
                     where_condition += " AND " +  new_condition              
-        return where_condition
+        return str(where_condition)
 
 
 
@@ -91,12 +95,16 @@ def main():
     qa = QA_System()
     sentence1 = "What restaurants serve italian, serve breakfast and is open at 2?"
     sentence4 = "What time does Brunch open?" 
-    sentence = "When does Brunch open?"
+    sentence5 = "When does Brunch close?"
     sentence2 = "What restaurants are open at 5pm"
     sentence3 = "where serves italian breakfast?"
     # see open or close, then go to end until you see a number g
     # Have a special query to see if between a time 
-    sentences = [sentence1, sentence2, sentence3, sentence4]
+    sentences = [sentence1, sentence2, sentence3, sentence4, sentence5,
+    "what restaurants are open?",
+    "what restaurants are open now?",
+    "what restaurants are closed at 5?",
+    ]
     print('\n')
     for test in sentences:
         print(test )
