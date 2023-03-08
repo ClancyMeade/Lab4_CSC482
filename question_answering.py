@@ -116,6 +116,7 @@ def main():
     "places open now?",
     "where is open now and serves italian?",
     "where serves italian and is open now?",
+
     ]
     print('\n')
     for test in sentences:
