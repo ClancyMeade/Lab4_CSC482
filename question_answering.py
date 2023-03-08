@@ -11,6 +11,7 @@ class QA_System:
             "restaurant" : "name",
             "restaurants" : "name",
             "where": "name",
+            "places" : "name"
         }
     
     def load_conditions(): 
@@ -59,7 +60,7 @@ class QA_System:
         for i in range(0,len(tokens)): 
             word = tokens[i]
             new_condition = None
-            if "open" in word:
+            if "open" in word or (word == 'now' and "open" not in tokens[i-1]) :
                 time_condition = self.get_time_condition(tokens[i:])
                 if time_condition is None:
                     t = time.localtime(time.time())
@@ -104,6 +105,12 @@ def main():
     "what restaurants are open?",
     "what restaurants are open now?",
     "what restaurants are closed at 5?",
+    "where can I eat italian and open now?",
+    "where is open now and serves italian",
+    "can I eat at an italian restaurant that is open?",
+    "can I eat at an italian restaurant that is open now?",
+    "can I eat at an italian restaurant now?",
+    "places open now?",
     ]
     print('\n')
     for test in sentences:
