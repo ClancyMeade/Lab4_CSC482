@@ -5,7 +5,8 @@ class QA_System:
     def __init__(self): 
         self.conditions = {
             "italian" : "cuisine",
-            "breakfast" : "food_type"
+            "breakfast" : "food_type",
+            "brunch" : "name"
         }
         self.question_translations = {
             "restaurant" : "name",
@@ -21,6 +22,8 @@ class QA_System:
 
     def get_select_condition(self,sentence):
         tokens = nltk.word_tokenize(sentence)
+        for i in range(0, len(tokens)):
+            tokens[i] = tokens[i].lower()
         desired = None
         for i in range(0,len(tokens)):
             word = tokens[i]
@@ -72,7 +75,8 @@ class QA_System:
                     t = time.localtime(time.time())
                     time_condition = t.tm_hour + t.tm_min/60 #current time
                 new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
-            elif word in self.conditions: 
+            elif word in self.conditions or word == "brunch": 
+                
                 column = self.conditions[word]
                 new_condition = column + ' = ' + word
 
@@ -81,7 +85,7 @@ class QA_System:
                     where_condition +=  new_condition
                 else: 
                     where_condition += " AND " +  new_condition              
-        return str(where_condition)
+        return where_condition
 
 
 
@@ -106,11 +110,12 @@ def main():
     "what restaurants are open now?",
     "what restaurants are closed at 5?",
     "where can I eat italian and open now?",
-    "where is open now and serves italian",
     "can I eat at an italian restaurant that is open?",
     "can I eat at an italian restaurant that is open now?",
     "can I eat at an italian restaurant now?",
     "places open now?",
+    "where is open now and serves italian?",
+    "where serves italian and is open now?",
     ]
     print('\n')
     for test in sentences:
