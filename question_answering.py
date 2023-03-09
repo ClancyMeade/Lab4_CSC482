@@ -1,5 +1,7 @@
 import nltk 
 import time
+from getpass import getpass
+from mysql.connector import connect, Error
 
 class QA_System: 
     def __init__(self): 
@@ -16,7 +18,9 @@ class QA_System:
         }
 
         self.exact_words = {
-            "brunch" : "\'brunch cafe\'",
+            "brunch" : "\'brunch\'",
+            "italian" : "\'italian\'",
+            "breakfast" : "\'breakfast\'",
         }
     def load_conditions(): 
         # go through csv 
@@ -126,15 +130,25 @@ def main():
     ]
     print('\n')
     for test in sentences:
-        print(test )
+        # print(test )
         select_tuple = qa.get_select_condition(test)
         select_statement = select_tuple[0]
         tokens_after_select = select_tuple[1]
-        print("SELECT " + select_statement)
-        print(" FROM t WHERE " + qa.get_conditions(tokens_after_select), '\n')
-
-
-
-
+        query = "SELECT" + select_statement + " FROM dining WHERE " + qa.get_conditions(tokens_after_select)
+        # query = "SELECT distinct(name) FROM lab4.dining WHERE food_type = \"breakfast\""
+        try:
+            with connect(
+                host="localhost",
+                user="root",
+                password="lab42023",
+                database="lab4",
+            ) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    result = cursor.fetchall()
+                    for row in result:
+                        print(row)
+        except Error as e:
+            print(e)              
 if __name__ == "__main__": 
     main()
