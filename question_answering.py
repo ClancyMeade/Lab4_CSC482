@@ -139,8 +139,8 @@ def main():
         try:
             with connect(
                 host="localhost",
-                user="root",
-                password="lab42023",
+                user="",
+                password="",
                 database="lab4",
             ) as connection:
                 with connection.cursor() as cursor:
