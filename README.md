@@ -54,3 +54,5 @@ except Error as e:
 Helpful Links:
 
 - https://realpython.com/python-mysql/
+
+Also, use `database.py` to populate the tables locally. This file has all of the insert statements.
