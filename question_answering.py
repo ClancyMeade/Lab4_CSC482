@@ -6,7 +6,7 @@ class QA_System:
         self.conditions = {
             "italian" : "cuisine",
             "breakfast" : "food_type",
-            "brunch" : "name"
+            "\'brunch cafe\'" : "name"
         }
         self.question_translations = {
             "restaurant" : "name",
@@ -14,7 +14,10 @@ class QA_System:
             "where": "name",
             "places" : "name"
         }
-    
+
+        self.exact_words = {
+            "brunch" : "\'brunch cafe\'",
+        }
     def load_conditions(): 
         # go through csv 
         # for each col, set key = val in col, value = col name
@@ -62,6 +65,9 @@ class QA_System:
         where_condition = ""
         for i in range(0,len(tokens)): 
             word = tokens[i]
+            if word in self.exact_words:
+                word = self.exact_words[word]
+
             new_condition = None
             if "open" in word or (word == 'now' and "open" not in tokens[i-1]) :
                 time_condition = self.get_time_condition(tokens[i:])
@@ -75,7 +81,7 @@ class QA_System:
                     t = time.localtime(time.time())
                     time_condition = t.tm_hour + t.tm_min/60 #current time
                 new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
-            elif word in self.conditions or word == "brunch": 
+            elif word in self.conditions: 
                 
                 column = self.conditions[word]
                 new_condition = column + ' = ' + word
