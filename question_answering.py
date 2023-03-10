@@ -172,7 +172,7 @@ class QA_System:
                 with connect(
                     host="localhost",
                     user="root",
-                    password="DivyaSQL",
+                    password="",
                     database="lab4",
                 ) as connection:
                     with connection.cursor() as cursor:
