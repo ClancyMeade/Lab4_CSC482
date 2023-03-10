@@ -6,46 +6,48 @@ class QA_System:
     def __init__(self):
         # Translates words to corresponding SQL column
         # to be used in WHERE clause of SQL query
-        self.table_name = "dining_table"
+        self.table_name = "dining"
         self.test_file = "test_sentences.txt"
-        self.conditions = {
-            "italian" : "cuisine",
-            "breakfast" : "food_type",
-            "brunch cafe" : "name"
-        }
+        self.conditions = {}
         # Translates words to corresponding SQL column 
         # to be used in SELECT of SQL query 
         self.question_translations = {
+        
+        # TABLE COLS: name, cuisine, diet, food_type, open, close            
             "restaurant" : "name",
             "restaurants" : "name",
+            "which" : "name", 
             "where": "name",
-            "places" : "name"
+            "places" : "name",
+            "dining" : "name", 
+            "food" : "cuisine", 
+            "type" : "food_type",             
+            "meals" : "food_type",                                              
         }
         
-    
+    # Loads conditions table with data from csv files 
     def load_conditions(self):
         # Read cuisine types 
         cuisine_file = open("./data/cuisine.csv", 'r')
         for line in cuisine_file: 
             tuple = line.strip().split(",")
             name = tuple[0]
-            cuisine = tuple[1]
-            self.conditions[cuisine] = name 
+            cuisine = tuple[1] 
+            self.conditions[cuisine] = "cuisine" 
+            # add name also 
+            self.conditions[name] = "name"
         # Read diet types 
         diet_file = open("./data/diet.csv", 'r')
         for line in diet_file:
             tuple = line.strip().split(",")
-            name = tuple[0]
             diet = tuple[1]
-            self.conditions[diet] = name 
+            self.conditions[diet] = "diet"
         # Read meal types
         meal_types_file = open("./data/meal_type.csv", 'r')
         for line in meal_types_file:
             tuple = line.strip().split(",")
-            name = tuple[0]
             meal_type = tuple[1]
-            self.conditions[meal_type] = name 
-                        
+            self.conditions[meal_type] = "food_type"                                         
 
     # Returns tokens in sentence 
     # Removes punctuation and converts to lower case
@@ -54,32 +56,35 @@ class QA_System:
         tokens = [w.lower() for w in nltk.word_tokenize(sentence)]
         return tokens         
 
+    # Returns the SELECT condition for the query
+    # obtained by converting words in tokens to SQL 
     def get_select_condition(self, sentence):
         tokens = self.get_tokens(sentence)
-        desired = None
+        desired_cols = []
         for i in range(0,len(tokens)):
             word = tokens[i]
             if "open" in word:
                 time_check = self.get_time_condition(tokens[i:])
-                print("open_check: ", time_check)
-                
+                #print("open_check: ", time_check)
                 if time_check is None:
                     #assume we are looking for a time
-                    desired = "open"
-                    tokens[i] = "-used-"
-                    
-            if "clos" in word:
+                    desired_cols.append("open")
+                    tokens[i] = "-used-"                    
+            elif "clos" in word:
                 time_check = self.get_time_condition(tokens[i:])
                 if time_check is None:
                     #assume we are looking for a time
-                    desired = "close"
+                    desired_cols.append("close")
                     tokens[i] = "-used-"
-                                        
-            if word in self.question_translations: #if 'resuraunt' is in the question, it will know it is looking for the resuraunt name
-                desired = self.question_translations[word]
+            # Look for translation from question word to SQL 
+            elif word in self.question_translations: 
+                desired_cols.append(self.question_translations[word])
                 tokens[i] = "-used-"
-            if desired:
-                return [desired,tokens]
+                
+        if len(desired_cols) > 0:
+            from_statement = "SELECT "
+            from_statement += ", ".join(desired_cols)
+            return [from_statement,tokens]
 
 
     # Given the end of a sentence, looks for a number representing a time
@@ -113,16 +118,16 @@ class QA_System:
                 time_condition = self.get_time_condition(tokens[i:])
                 if time_condition is None: # no time given, use current time 
                     t = time.localtime(time.time())
-                    time_condition = t.tm_hour + t.tm_min/60 
+                    time_condition = round(t.tm_hour + t.tm_min/60, 2)
                 new_condition = str(time_condition) + " BETWEEN open AND close" 
 
             # Check if word relates to closing 
-            elif "clos" in word or (word == 'now' and "clos" not in tokens[i-1]):
+            elif "clos" in word or (word == 'now' and "open" not in tokens[i-1]):
                 # If time given later in sentence, use it. If not given, use current time. 
                 time_condition = self.get_time_condition(tokens[i:])
                 if time_condition is None: # curr time 
                     t = time.localtime(time.time())
-                    time_condition = t.tm_hour + t.tm_min/60 
+                    time_condition = round(t.tm_hour + t.tm_min/60, 2)
                 new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
             
             if new_condition :
@@ -142,10 +147,13 @@ class QA_System:
             select_tuple = self.get_select_condition(sentence)
             select_statement = select_tuple[0]
             tokens_after_select = select_tuple[1]
-            print("SELECT " + select_statement)
+            print(select_statement)
             print("FROM " + self.table_name)
             print(self.get_where_clause(tokens_after_select), '\n')
             
+# TABLE COLS: name, cuisine, diet, food_type, open, close
+
+
             
 def main(): 
     qa = QA_System()    
