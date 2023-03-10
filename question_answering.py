@@ -172,7 +172,7 @@ class QA_System:
                 with connect(
                     host="localhost",
                     user="root",
-                    password="lab42023",
+                    password="DivyaSQL",
                     database="lab4",
                 ) as connection:
                     with connection.cursor() as cursor:
@@ -183,8 +183,15 @@ class QA_System:
                                 output.append(row)
             except Error as e:
                 print(e)
-            for d in output:
-                print(d)
+
+            answer = "Here's what we found."
+            for row in output:
+                ans = ", ".join([str(val) for val in row])
+                answer = answer + "\n" + ans
+
+            print()
+            print(answer)
+            print()
             print("###########################################")
             print()
             
