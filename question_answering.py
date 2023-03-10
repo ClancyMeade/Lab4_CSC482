@@ -97,6 +97,19 @@ class QA_System:
             if wordAfterTime.strip("pm").isdigit():
                 return str(int(wordAfterTime.strip("pm")) + 12)
 
+    # Adds quotes to strings used in SQL query 
+    def add_quotes(self, condition):
+        if "=" in condition:
+            orig_condition = condition[: condition.index("=") + 2] 
+            condition = condition[condition.index("=") + 1 : ]
+            condition = condition.strip()
+            if condition.isnumeric():
+                return
+            new_cond =  "'" + condition + "'"
+            where_cond = orig_condition + new_cond
+            return where_cond
+        else:
+            return condition
 
     # Returns the WHERE clause for the query 
     # obtained by converting words in tokens to SQL 
@@ -132,9 +145,9 @@ class QA_System:
             
             if new_condition :
                 if where_clause == "WHERE ": 
-                    where_clause += new_condition
+                    where_clause += self.add_quotes(new_condition)
                 else: 
-                    where_clause += " AND " +  new_condition
+                    where_clause += " AND " +  self.add_quotes(new_condition)
         return where_clause
 
     # Reads in test questions from file and prints their corresponding SQL statements 
