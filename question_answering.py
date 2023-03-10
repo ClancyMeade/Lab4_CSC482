@@ -1,6 +1,8 @@
 import nltk 
 import time
 import re
+from getpass import getpass
+from mysql.connector import connect, Error
 
 class QA_System: 
     def __init__(self):
@@ -160,9 +162,31 @@ class QA_System:
             select_tuple = self.get_select_condition(sentence)
             select_statement = select_tuple[0]
             tokens_after_select = select_tuple[1]
-            print(select_statement)
-            print("FROM " + self.table_name)
-            print(self.get_where_clause(tokens_after_select), '\n')
+            query = select_statement + " FROM " + self.table_name + " " + self.get_where_clause(tokens_after_select)
+            print(query)
+            # print(select_statement)
+            # print("FROM " + self.table_name)
+            # print(self.get_where_clause(tokens_after_select), '\n')
+            output = []
+            try:
+                with connect(
+                    host="localhost",
+                    user="root",
+                    password="lab42023",
+                    database="lab4",
+                ) as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(query)
+                        result = cursor.fetchall()
+                        for row in result:
+                            if row not in output:
+                                output.append(row)
+            except Error as e:
+                print(e)
+            for d in output:
+                print(d)
+            print("###########################################")
+            print()
             
 # TABLE COLS: name, cuisine, diet, food_type, open, close
 
