@@ -1,154 +1,201 @@
 import nltk 
 import time
+import re
 from getpass import getpass
 from mysql.connector import connect, Error
 
 class QA_System: 
-    def __init__(self): 
-        self.conditions = {
-            "italian" : "cuisine",
-            "breakfast" : "food_type",
-            "\'brunch cafe\'" : "name"
-        }
+    def __init__(self):
+        # Translates words to corresponding SQL column
+        # to be used in WHERE clause of SQL query
+        self.table_name = "dining"
+        self.test_file = "test_sentences.txt"
+        self.conditions = {}
+        # Translates words to corresponding SQL column 
+        # to be used in SELECT of SQL query 
         self.question_translations = {
+        
+        # TABLE COLS: name, cuisine, diet, food_type, open, close            
             "restaurant" : "name",
             "restaurants" : "name",
+            "which" : "name", 
             "where": "name",
-            "places" : "name"
+            "places" : "name",
+            "dining" : "name", 
+            "food" : "cuisine", 
+            "type" : "food_type",             
+            "meals" : "food_type",                                              
         }
+        
+    # Loads conditions table with data from csv files 
+    def load_conditions(self):
+        # Read cuisine types 
+        cuisine_file = open("./data/cuisine.csv", 'r')
+        for line in cuisine_file: 
+            tuple = line.strip().split(",")
+            name = tuple[0]
+            cuisine = tuple[1] 
+            self.conditions[cuisine] = "cuisine" 
+            # add name also 
+            self.conditions[name] = "name"
+        # Read diet types 
+        diet_file = open("./data/diet.csv", 'r')
+        for line in diet_file:
+            tuple = line.strip().split(",")
+            diet = tuple[1]
+            self.conditions[diet] = "diet"
+        # Read meal types
+        meal_types_file = open("./data/meal_type.csv", 'r')
+        for line in meal_types_file:
+            tuple = line.strip().split(",")
+            meal_type = tuple[1]
+            self.conditions[meal_type] = "food_type"                                         
 
-        self.exact_words = {
-            "brunch" : "\'brunch\'",
-            "italian" : "\'italian\'",
-            "breakfast" : "\'breakfast\'",
-        }
-    def load_conditions(): 
-        # go through csv 
-        # for each col, set key = val in col, value = col name
-        pass
+    # Returns tokens in sentence 
+    # Removes punctuation and converts to lower case
+    def get_tokens(self, sentence): 
+        sentence = re.sub(r"[^a-zA-Z0-9\s]", "", sentence)
+        tokens = [w.lower() for w in nltk.word_tokenize(sentence)]
+        return tokens         
 
-    def get_select_condition(self,sentence):
-        tokens = nltk.word_tokenize(sentence)
-        for i in range(0, len(tokens)):
-            tokens[i] = tokens[i].lower()
-        desired = None
+    # Returns the SELECT condition for the query
+    # obtained by converting words in tokens to SQL 
+    def get_select_condition(self, sentence):
+        tokens = self.get_tokens(sentence)
+        desired_cols = []
         for i in range(0,len(tokens)):
             word = tokens[i]
             if "open" in word:
                 time_check = self.get_time_condition(tokens[i:])
-                print("open_check: ", time_check)
-
+                #print("open_check: ", time_check)
                 if time_check is None:
                     #assume we are looking for a time
-                    desired = "open"
-                    tokens[i] = "-used-"
-
-            if "clos" in word:
+                    desired_cols.append("open")
+                    tokens[i] = "-used-"                    
+            elif "clos" in word:
                 time_check = self.get_time_condition(tokens[i:])
                 if time_check is None:
                     #assume we are looking for a time
-                    desired = "close"
+                    desired_cols.append("close")
                     tokens[i] = "-used-"
-                    
-                    
-            if word in self.question_translations: #if 'resuraunt' is in the question, it will know it is looking for the resuraunt name
-                desired = self.question_translations[word]
+            # Look for translation from question word to SQL 
+            elif word in self.question_translations: 
+                desired_cols.append(self.question_translations[word])
                 tokens[i] = "-used-"
-            if desired:
-                return [desired,tokens]
+                
+        if len(desired_cols) > 0:
+            from_statement = "SELECT "
+            from_statement += ", ".join(desired_cols)
+            return [from_statement,tokens]
 
-    def get_time_condition(self,tokens):
+
+    # Given the end of a sentence, looks for a number representing a time
+    # Returns a string representing the 24 hour time
+    def get_time_condition(self, tokens):
         for j in range(0, len(tokens)):
-                    wordAfterTime = tokens[j]
-                    if wordAfterTime.isdigit():
-                        return str(int(wordAfterTime) + 12)
-                    if wordAfterTime.strip("pm").isdigit():
-                        return str(int(wordAfterTime.strip("pm")) + 12)
+            wordAfterTime = tokens[j]
+            if wordAfterTime.isdigit():
+                return str(int(wordAfterTime) + 12)
+            if wordAfterTime.strip("pm").isdigit():
+                return str(int(wordAfterTime.strip("pm")) + 12)
 
-    def get_conditions(self, tokens): 
-        where_condition = ""
+    # Adds quotes to strings used in SQL query 
+    def add_quotes(self, condition):
+        if "=" in condition:
+            orig_condition = condition[: condition.index("=") + 2] 
+            condition = condition[condition.index("=") + 1 : ]
+            condition = condition.strip()
+            if condition.isnumeric():
+                return
+            new_cond =  "'" + condition + "'"
+            where_cond = orig_condition + new_cond
+            return where_cond
+        else:
+            return condition
+
+    # Returns the WHERE clause for the query 
+    # obtained by converting words in tokens to SQL 
+    def get_where_clause(self, tokens): 
+        where_clause = "WHERE "
+        
         for i in range(0,len(tokens)): 
             word = tokens[i]
-            if word in self.exact_words:
-                word = self.exact_words[word]
-
             new_condition = None
-            if "open" in word or (word == 'now' and "open" not in tokens[i-1]) :
-                time_condition = self.get_time_condition(tokens[i:])
-                if time_condition is None:
-                    t = time.localtime(time.time())
-                    time_condition = t.tm_hour + t.tm_min/60 #current time
-                new_condition = str(time_condition) + " BETWEEN open AND close"  
-            elif "clos" in word:
-                time_condition = self.get_time_condition(tokens[i:])
-                if time_condition is None:
-                    t = time.localtime(time.time())
-                    time_condition = t.tm_hour + t.tm_min/60 #current time
-                new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
-            elif word in self.conditions: 
-                
+            
+            # Check if word can be converted to column in SQL table, and set new_condition if it can
+            if word in self.conditions: 
                 column = self.conditions[word]
                 new_condition = column + ' = ' + word
+            
+            # Check if word relates to opening
+            elif "open" in word or (word == 'now' and "open" not in tokens[i-1]):
+                # If time given later in sentence, use it. If not given, use current time. 
+                time_condition = self.get_time_condition(tokens[i:])
+                if time_condition is None: # no time given, use current time 
+                    t = time.localtime(time.time())
+                    time_condition = round(t.tm_hour + t.tm_min/60, 2)
+                new_condition = str(time_condition) + " BETWEEN open AND close" 
 
+            # Check if word relates to closing 
+            elif "clos" in word or (word == 'now' and "open" not in tokens[i-1]):
+                # If time given later in sentence, use it. If not given, use current time. 
+                time_condition = self.get_time_condition(tokens[i:])
+                if time_condition is None: # curr time 
+                    t = time.localtime(time.time())
+                    time_condition = round(t.tm_hour + t.tm_min/60, 2)
+                new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
+            
             if new_condition :
-                if len(where_condition) == 0: 
-                    where_condition +=  new_condition
+                if where_clause == "WHERE ": 
+                    where_clause += self.add_quotes(new_condition)
                 else: 
-                    where_condition += " AND " +  new_condition              
-        return where_condition
+                    where_clause += " AND " +  self.add_quotes(new_condition)
+        return where_clause
+
+    # Reads in test questions from file and prints their corresponding SQL statements 
+    def test(self): 
+        self.load_conditions()
+        test_file = open(self.test_file, 'r') 
+        for sentence in test_file: 
+            question = sentence.strip()
+            print(question)
+            select_tuple = self.get_select_condition(sentence)
+            select_statement = select_tuple[0]
+            tokens_after_select = select_tuple[1]
+            query = select_statement + " FROM " + self.table_name + " " + self.get_where_clause(tokens_after_select)
+            print(query)
+            # print(select_statement)
+            # print("FROM " + self.table_name)
+            # print(self.get_where_clause(tokens_after_select), '\n')
+            output = []
+            try:
+                with connect(
+                    host="localhost",
+                    user="root",
+                    password="lab42023",
+                    database="lab4",
+                ) as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(query)
+                        result = cursor.fetchall()
+                        for row in result:
+                            if row not in output:
+                                output.append(row)
+            except Error as e:
+                print(e)
+            for d in output:
+                print(d)
+            print("###########################################")
+            print()
+            
+# TABLE COLS: name, cuisine, diet, food_type, open, close
 
 
-
-# COLS: Location, Open, Close, Cuisine, Diet, MealType 
-
-# What restaurant serves italian* and when does it open*? -> Name* opens at time* 
-
-# SELECT restaurant FROM Name, Time 
-
-
+            
 def main(): 
-    qa = QA_System()
-    sentence1 = "What restaurants serve italian, serve breakfast and is open at 2?"
-    sentence4 = "What time does Brunch open?" 
-    sentence5 = "When does Brunch close?"
-    sentence2 = "What restaurants are open at 5pm"
-    sentence3 = "where serves italian breakfast?"
-    # see open or close, then go to end until you see a number g
-    # Have a special query to see if between a time 
-    sentences = [sentence1, sentence2, sentence3, sentence4, sentence5,
-    "what restaurants are open?",
-    "what restaurants are open now?",
-    "what restaurants are closed at 5?",
-    "where can I eat italian and open now?",
-    "can I eat at an italian restaurant that is open?",
-    "can I eat at an italian restaurant that is open now?",
-    "can I eat at an italian restaurant now?",
-    "places open now?",
-    "where is open now and serves italian?",
-    "where serves italian and is open now?",
-
-    ]
-    print('\n')
-    for test in sentences:
-        # print(test )
-        select_tuple = qa.get_select_condition(test)
-        select_statement = select_tuple[0]
-        tokens_after_select = select_tuple[1]
-        query = "SELECT" + select_statement + " FROM dining WHERE " + qa.get_conditions(tokens_after_select)
-        # query = "SELECT distinct(name) FROM lab4.dining WHERE food_type = \"breakfast\""
-        try:
-            with connect(
-                host="localhost",
-                user="",
-                password="",
-                database="lab4",
-            ) as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(query)
-                    result = cursor.fetchall()
-                    for row in result:
-                        print(row)
-        except Error as e:
-            print(e)              
+    qa = QA_System()    
+    qa.test()
+    
+    
 if __name__ == "__main__": 
     main()
