@@ -97,7 +97,7 @@ class QA_System:
     # obtained by converting words in tokens to SQL 
     def get_where_clause(self, tokens): 
         where_clause = "WHERE "
-        # Check each token for possible conversion 
+        
         for i in range(0,len(tokens)): 
             word = tokens[i]
             new_condition = None
@@ -125,7 +125,6 @@ class QA_System:
                     time_condition = t.tm_hour + t.tm_min/60 
                 new_condition = str(time_condition) + " NOT BETWEEN open AND close" 
             
-            # If condition was set, add it to where clause (if not set, skip word)
             if new_condition :
                 if where_clause == "WHERE ": 
                     where_clause += new_condition
