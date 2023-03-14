@@ -21,6 +21,7 @@ class QA_System:
     def load_conditions(): 
         # go through csv 
         # for each col, set key = val in col, value = col name
+        
         pass
 
     def get_select_condition(self,sentence):
