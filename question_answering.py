@@ -167,8 +167,8 @@ class QA_System:
             # Query database 
             output = []
             connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
-                             user='',
-                             password='',
+                             user='iotdev',
+                             password='iot985',
                              database='iot_test',
                              cursorclass=pymysql.cursors.DictCursor)
             try:
@@ -220,11 +220,74 @@ class QA_System:
             print()
             print("###########################################")
             print()
+            
+    def get_answer(self, question): 
+        try:
+            question = question.strip()
+            print(question)
+            select_tuple = self.get_select_condition(question)
+            select_statement = select_tuple[0]
+            tokens_after_select = select_tuple[1]
+            query = select_statement + \
+                    " FROM " + self.table_name + " " \
+                    + self.get_where_clause(tokens_after_select)
+            print(query)
+            # Query database 
+            output = []
+            connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
+                            user='iotdev',
+                            password='iot985',
+                            database='iot_test',
+                            cursorclass=pymysql.cursors.DictCursor)
+            with connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    result = cursor.fetchall()
+                    for r in result:
+                        if r not in output:
+                            output.append(r)
+            print("Here's what we found.")
+            answer = ""
+            for row in output:
+                ans = []
+                for k in list(row.keys()):
+                    if row[k] not in ans:
+                        output = str(row[k])
+                        if output[0].isnumeric():
+                            if row[k] >= 13:
+                                twelveHTime = int(row[k] - 12)
+                                remainder = int(output[output.index(".") + 1:])
+                                if remainder > 0:
+                                    output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
+                                else:
+                                    output = str(twelveHTime) + "PM"
+                            elif row[k] < 12:
+                                twelveHTime = output[:output.index(".")]
+                                remainder = float("0" + output[output.index("."):])
+                                if remainder > 0:
+                                    rem = round((remainder * 60), 1)
+                                    output = twelveHTime + ":" + str(int(rem)) + "AM"
+                                else:
+                                    output = twelveHTime + "AM"
+                            else:
+                                output += "PM"
+                        ans.append(output)
+                    
+                answer += ", ".join(ans) 
+                answer += "\n"
+                print(answer)
+                return answer 
+        except: 
+            answer = "Sorry, I don't have information to answer your question. Please ask another question."
+            print(answer)
+            return answer
+            
+            
 
 def main(): 
     qa = QA_System()    
     qa.test()
-    
+    #qa.get_answer("How is the weather today?")
     
 if __name__ == "__main__": 
     main()
