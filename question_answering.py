@@ -1,8 +1,7 @@
 import nltk 
 import time
 import re
-from getpass import getpass
-from mysql.connector import connect, Error
+import pymysql.cursors
 
 class QA_System: 
     def __init__(self):
@@ -167,26 +166,54 @@ class QA_System:
             print(query)
             # Query database 
             output = []
+            connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
+                             user='iotdev',
+                             password='iot985',
+                             database='iot_test',
+                             cursorclass=pymysql.cursors.DictCursor)
             try:
-                with connect(
-                    host="localhost",
-                    user="root",
-                    password="",
-                    database="lab4",
-                ) as connection:
+                with connection:
                     with connection.cursor() as cursor:
                         cursor.execute(query)
                         result = cursor.fetchall()
-                        for row in result:
-                            if row not in output:
-                                output.append(row)
-            except Error as e:
-                print(e)
+                        for r in result:
+                            if r not in output:
+                                output.append(r)
+                        # for row in result:
+                        #     if row not in output:
+                        #         output.append(row)
+            except:
+                print("Error")
 
-            answer = "Here's what we found."
+            print("Here's what we found.")
+            answer = ""
             for row in output:
-                ans = ", ".join([str(val) for val in row])
-                answer = answer + "\n" + ans
+                ans = []
+                for k in list(row.keys()):
+                    if row[k] not in ans:
+                        output = str(row[k])
+                        if output[0].isnumeric():
+                            if row[k] >= 13:
+                                twelveHTime = int(row[k] - 12)
+                                remainder = int(output[output.index(".") + 1:])
+                                if remainder > 0:
+                                    output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
+                                else:
+                                    output = str(twelveHTime) + "PM"
+                            elif row[k] < 12:
+                                twelveHTime = output[:output.index(".")]
+                                remainder = float("0" + output[output.index("."):])
+                                if remainder > 0:
+                                    rem = round((remainder * 60), 1)
+                                    output = twelveHTime + ":" + str(int(rem)) + "AM"
+                                else:
+                                    output = twelveHTime + "AM"
+                            else:
+                                output += "PM"
+                        ans.append(output)
+                
+                answer += ", ".join(ans) 
+                answer += "\n"
 
             print()
             print(answer)
@@ -194,36 +221,10 @@ class QA_System:
             print("###########################################")
             print()
 
-    # Returns the answer to question 
-    # Converts question to SQL and queries the database 
-    def get_answer(self, question):
-        select_tuple = self.get_select_condition(question)
-        select_statement = select_tuple[0]
-        tokens_after_select = select_tuple[1]
-        query = select_statement + \
-                " FROM " + self.table_name + " " \
-                + self.get_where_clause(tokens_after_select)
-        print(query)
-        # Query database 
-        output = []
-        try:
-            with connect(
-                host="localhost",
-                user="root",
-                password="",
-                database="lab4",
-            ) as connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(query)
-                    result = cursor.fetchall()
-                    for row in result:
-                        if row not in output:
-                            output.append(row)
-        except Error as e:
-            print(e)
-
-        answer = "Here's what we found."
-        for row in output:
-            ans = ", ".join([str(val) for val in row])
-            answer = answer + "\n" + ans    
-        return answer 
+def main(): 
+    qa = QA_System()    
+    qa.test()
+    
+    
+if __name__ == "__main__": 
+    main()
