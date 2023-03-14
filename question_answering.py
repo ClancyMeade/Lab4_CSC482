@@ -167,8 +167,8 @@ class QA_System:
             # Query database 
             output = []
             connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
-                             user='iotdev',
-                             password='iot985',
+                             user='',
+                             password='',
                              database='iot_test',
                              cursorclass=pymysql.cursors.DictCursor)
             try:
