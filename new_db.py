@@ -1,5 +1,5 @@
-import pymysql.cursors
-
+# import pymysql.cursors
+import sqlite3
 
 """
 Create Database
@@ -161,66 +161,60 @@ insert_hours = [
 "INSERT INTO hours(name,open,close) VALUES ('einstein',7.0,17.5);"
 ]
 
-connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
-                             user='',
-                             password='',
-                             database='iot_test',
-                             cursorclass=pymysql.cursors.DictCursor)
+connection = sqlite3.connect(database='iot_test')
+cursor = connection.cursor()
 
 
-with connection:
-    with connection.cursor() as cursor:
-            """
-            Populate tables, uncomment all at once and run
-            """
-            # cursor.execute(create_cuisines_table_query)
-            # cursor.execute(create_dies_table_query)
-            # cursor.execute(create_meal_type_table_query)
-            # cursor.execute(create_hours_table_query)
+"""
+Populate tables, uncomment all at once and run
+"""
+# cursor.execute(create_cuisines_table_query)
+# cursor.execute(create_dies_table_query)
+# cursor.execute(create_meal_type_table_query)
+# cursor.execute(create_hours_table_query)
 
-            """
+"""
 
-            UNCOMMENT ALL THE EXECUTES BEFORE THIS
+UNCOMMENT ALL THE EXECUTES BEFORE THIS
 
-            Executing insert statements, uncomment one by one and then run
-            """
-            # for q in insert_cuisines:
-            #     cursor.execute(q)
+Executing insert statements, uncomment one by one and then run
+# """
+# for q in insert_cuisines:
+#     cursor.execute(q)
 
-            # for q in insert_diets:
-            #     cursor.execute(q)
+# for q in insert_diets:
+#     cursor.execute(q)
 
-            # for q in insert_meal_types:
-            #     cursor.execute(q)
+# for q in insert_meal_types:
+#     cursor.execute(q)
 
-            # for q in insert_hours:
-            #     cursor.execute(q)
+# for q in insert_hours:
+#     cursor.execute(q)
+
+# for row in cursor.execute("SELECT cuisines.name as name, cuisine, diet, food_type, open, close from cuisines join meal_types on cuisines.name = meal_types.name join hours on hours.name = meal_types.name join diets on hours.name = meal_types.name"):
+#     print(row)
 
 
-            """
-            UNCOMMENT ALL THE EXECUTES BEFORE THIS
-            """
+"""
+UNCOMMENT ALL THE EXECUTES BEFORE THIS
+"""
 
-            """
-            Join all tables into one table
-            """
-            join_t = """CREATE TABLE dining AS (SELECT cuisines.name as name, cuisine, diet, food_type, open, close 
-            from cuisines 
-            join meal_types on cuisines.name = meal_types.name 
-            join hours on hours.name = meal_types.name 
-            join diets on hours.name = meal_types.name)
-            """
-            # cursor.execute(join_t)
+"""
+Join all tables into one table
+"""
+# join_t = "CREATE TABLE " + "dining" +  "AS" +  "SELECT cuisines.name, cuisine, diet, food_type, open, close from cuisines inner join meal_types on cuisines.name = meal_types.name inner join hours on hours.name = meal_types.name inner join diets on hours.name = meal_types.name"
+# cursor.execute(join_t)
 
-            """
-            TEST
-            """
-            # output = []
-            # cursor.execute("SELECT name FROM dining WHERE cuisine = 'italian' AND food_type = 'lunch' AND 14 BETWEEN open AND close")
-            # result = cursor.fetchall()
-            # for r in result:
-            #     if r not in output:
-            #         output.append(r)
-            # print(output)
-    connection.commit()
+"""
+TEST
+"""
+# output = []
+# cursor.execute("SELECT name FROM dining WHERE cuisine = 'italian' AND food_type = 'lunch' AND 14 BETWEEN open AND close")
+# result = cursor.fetchall()
+# for r in result:
+#     if r not in output:
+#         output.append(r)
+# print(output)
+connection.commit()
+connection.close()
 
