@@ -67,7 +67,7 @@ class QA_System:
         desired_cols = []
         for i in range(0,len(tokens)):
             word = tokens[i]
-            if "open" in word:
+            if "open" in word and ("now" not in tokens[i:]):
                 time_check = self.get_time_condition(tokens[i:])
                 #print("open_check: ", time_check)
                 if time_check is None:
@@ -174,38 +174,12 @@ class QA_System:
                 for r in result:
                     if r not in output:
                         output.append(r)
-                # for row in result:
-                #     if row not in output:
-                #         output.append(row)
             except:
                 print("Error")
 
             print("Here's what we found.")
             answer = ""
             for row in output:
-                # ans = []
-                # for k in list(row.keys()):
-                #     if row[k] not in ans:
-                #         output = str(row[k])
-                #         if output[0].isnumeric():
-                #             if row[k] >= 13:
-                #                 twelveHTime = int(row[k] - 12)
-                #                 remainder = int(output[output.index(".") + 1:])
-                #                 if remainder > 0:
-                #                     output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
-                #                 else:
-                #                     output = str(twelveHTime) + "PM"
-                #             elif row[k] < 12:
-                #                 twelveHTime = output[:output.index(".")]
-                #                 remainder = float("0" + output[output.index("."):])
-                #                 if remainder > 0:
-                #                     rem = round((remainder * 60), 1)
-                #                     output = twelveHTime + ":" + str(int(rem)) + "AM"
-                #                 else:
-                #                     output = twelveHTime + "AM"
-                #             else:
-                #                 output += "PM"
-                #         ans.append(output)
                 output = []
                 for val in row:
                     str_val = str(val)
@@ -234,17 +208,14 @@ class QA_System:
                             str_val += "PM"
                     output.append(str_val)
                 ans = ", ".join(output)
-                answer = answer + "\n" + ans
-                
-                # answer += ", ".join(ans) 
-                # answer += "\n"
+                answer = answer + "\n" + ans + "."            
 
-            print()
             print(answer)
             print()
             print("###########################################")
             print()
             
+    # Returns the answer to a single question
     def get_answer(self, question): 
         try:
             question = question.strip()
@@ -260,53 +231,61 @@ class QA_System:
             output = []
             connection = sqlite3.connect(database='iot_test')
             cursor = connection.cursor()
-            cursor.execute(query)
-            result = cursor.fetchall()
-            for r in result:
-                if r not in output:
-                    output.append(r)
+            try:
+                cursor.execute(query)
+                result = cursor.fetchall()
+                for r in result:
+                    if r not in output:
+                        output.append(r)
+            except:
+                print("Error")
+
             print("Here's what we found.")
             answer = ""
             for row in output:
-                ans = []
-                for k in list(row.keys()):
-                    if row[k] not in ans:
-                        output = str(row[k])
-                        if output[0].isnumeric():
-                            if row[k] >= 13:
-                                twelveHTime = int(row[k] - 12)
-                                remainder = int(output[output.index(".") + 1:])
-                                if remainder > 0:
-                                    output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
-                                else:
-                                    output = str(twelveHTime) + "PM"
-                            elif row[k] < 12:
-                                twelveHTime = output[:output.index(".")]
-                                remainder = float("0" + output[output.index("."):])
-                                if remainder > 0:
-                                    rem = round((remainder * 60), 1)
-                                    output = twelveHTime + ":" + str(int(rem)) + "AM"
-                                else:
-                                    output = twelveHTime + "AM"
+                output = []
+                for val in row:
+                    str_val = str(val)
+                    if str_val[0].isnumeric():
+                        if val >= 13:
+                            twelveHTime = int(val - 12)
+                            remainder = 0
+                            if "." in str_val:
+                                remainder = int(str_val[str_val.index(".") + 1:])
+                            if remainder > 0:
+                                str_val = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
                             else:
-                                output += "PM"
-                        ans.append(output)
-                    
-                answer += ", ".join(ans) 
-                answer += "\n"
-                print(answer)
-                return answer 
-        except: 
-            answer = "Sorry, I don't have information to answer your question. Please ask another question."
+                                str_val = str(twelveHTime) + "PM"
+                        elif val < 12:
+                            remainder = 0
+                            twelveHTime = str_val
+                            if "." in str_val:
+                                twelveHTime = str_val[:str_val.index(".")]
+                                remainder = float("0" + str_val[str_val.index("."):])
+                            if remainder > 0:
+                                rem = round((remainder * 60), 1)
+                                str_val = twelveHTime + ":" + str(int(rem)) + "AM"
+                            else:
+                                str_val = twelveHTime + "AM"
+                        else:
+                            str_val += "PM"
+                    output.append(str_val)
+                ans = ", ".join(output)
+                answer = answer + "\n" + ans + "."        
+
             print(answer)
             return answer
-            
+        except: 
+            answer = "Sorry, I can't answer this question. Please ask a different question."
+            print(answer)
+            return answer
+        
             
 
 def main(): 
     qa = QA_System()    
     qa.test()
-    #qa.get_answer("How is the weather today?")
+    #qa.get_answer("This is a test")
     
 if __name__ == "__main__": 
     main()

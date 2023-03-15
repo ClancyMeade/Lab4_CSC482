@@ -45,7 +45,7 @@ def main():
                 speak_text('Goodbye, have a nice day.', leds)
                 keep_going = False            
             else:             
-                answer = assistant.get_answer()
+                answer = assistant.get_answer(question)
                 #answer = 'Hello, this is only a demo answer.'
                 speak_text(answer, leds)
 
