@@ -1,7 +1,7 @@
 import nltk 
 import time
 import re
-import pymysql.cursors
+import sqlite3
 
 class QA_System: 
     def __init__(self):
@@ -166,54 +166,78 @@ class QA_System:
             print(query)
             # Query database 
             output = []
-            connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
-                             user='iotdev',
-                             password='iot985',
-                             database='iot_test',
-                             cursorclass=pymysql.cursors.DictCursor)
+            connection = sqlite3.connect(database='iot_test')
+            cursor = connection.cursor()
             try:
-                with connection:
-                    with connection.cursor() as cursor:
-                        cursor.execute(query)
-                        result = cursor.fetchall()
-                        for r in result:
-                            if r not in output:
-                                output.append(r)
-                        # for row in result:
-                        #     if row not in output:
-                        #         output.append(row)
+                cursor.execute(query)
+                result = cursor.fetchall()
+                for r in result:
+                    if r not in output:
+                        output.append(r)
+                # for row in result:
+                #     if row not in output:
+                #         output.append(row)
             except:
                 print("Error")
 
             print("Here's what we found.")
             answer = ""
             for row in output:
-                ans = []
-                for k in list(row.keys()):
-                    if row[k] not in ans:
-                        output = str(row[k])
-                        if output[0].isnumeric():
-                            if row[k] >= 13:
-                                twelveHTime = int(row[k] - 12)
-                                remainder = int(output[output.index(".") + 1:])
-                                if remainder > 0:
-                                    output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
-                                else:
-                                    output = str(twelveHTime) + "PM"
-                            elif row[k] < 12:
-                                twelveHTime = output[:output.index(".")]
-                                remainder = float("0" + output[output.index("."):])
-                                if remainder > 0:
-                                    rem = round((remainder * 60), 1)
-                                    output = twelveHTime + ":" + str(int(rem)) + "AM"
-                                else:
-                                    output = twelveHTime + "AM"
+                # ans = []
+                # for k in list(row.keys()):
+                #     if row[k] not in ans:
+                #         output = str(row[k])
+                #         if output[0].isnumeric():
+                #             if row[k] >= 13:
+                #                 twelveHTime = int(row[k] - 12)
+                #                 remainder = int(output[output.index(".") + 1:])
+                #                 if remainder > 0:
+                #                     output = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
+                #                 else:
+                #                     output = str(twelveHTime) + "PM"
+                #             elif row[k] < 12:
+                #                 twelveHTime = output[:output.index(".")]
+                #                 remainder = float("0" + output[output.index("."):])
+                #                 if remainder > 0:
+                #                     rem = round((remainder * 60), 1)
+                #                     output = twelveHTime + ":" + str(int(rem)) + "AM"
+                #                 else:
+                #                     output = twelveHTime + "AM"
+                #             else:
+                #                 output += "PM"
+                #         ans.append(output)
+                output = []
+                for val in row:
+                    str_val = str(val)
+                    if str_val[0].isnumeric():
+                        if val >= 13:
+                            twelveHTime = int(val - 12)
+                            remainder = 0
+                            if "." in str_val:
+                                remainder = int(str_val[str_val.index(".") + 1:])
+                            if remainder > 0:
+                                str_val = str(twelveHTime) + ":" + str((round(remainder * 60), 2)) + "PM"
                             else:
-                                output += "PM"
-                        ans.append(output)
+                                str_val = str(twelveHTime) + "PM"
+                        elif val < 12:
+                            remainder = 0
+                            twelveHTime = str_val
+                            if "." in str_val:
+                                twelveHTime = str_val[:str_val.index(".")]
+                                remainder = float("0" + str_val[str_val.index("."):])
+                            if remainder > 0:
+                                rem = round((remainder * 60), 1)
+                                str_val = twelveHTime + ":" + str(int(rem)) + "AM"
+                            else:
+                                str_val = twelveHTime + "AM"
+                        else:
+                            str_val += "PM"
+                    output.append(str_val)
+                ans = ", ".join(output)
+                answer = answer + "\n" + ans
                 
-                answer += ", ".join(ans) 
-                answer += "\n"
+                # answer += ", ".join(ans) 
+                # answer += "\n"
 
             print()
             print(answer)
@@ -234,18 +258,13 @@ class QA_System:
             print(query)
             # Query database 
             output = []
-            connection = pymysql.connect(host='dev2020.chzg5zpujwmo.us-west-2.rds.amazonaws.com',
-                            user='iotdev',
-                            password='iot985',
-                            database='iot_test',
-                            cursorclass=pymysql.cursors.DictCursor)
-            with connection:
-                with connection.cursor() as cursor:
-                    cursor.execute(query)
-                    result = cursor.fetchall()
-                    for r in result:
-                        if r not in output:
-                            output.append(r)
+            connection = sqlite3.connect(database='iot_test')
+            cursor = connection.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            for r in result:
+                if r not in output:
+                    output.append(r)
             print("Here's what we found.")
             answer = ""
             for row in output:
