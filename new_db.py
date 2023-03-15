@@ -1,4 +1,3 @@
-# import pymysql.cursors
 import sqlite3
 
 """
@@ -202,14 +201,13 @@ UNCOMMENT ALL THE EXECUTES BEFORE THIS
 """
 Join all tables into one table
 """
-# join_t = "CREATE TABLE " + "dining" +  "AS" +  "SELECT cuisines.name, cuisine, diet, food_type, open, close from cuisines inner join meal_types on cuisines.name = meal_types.name inner join hours on hours.name = meal_types.name inner join diets on hours.name = meal_types.name"
-# cursor.execute(join_t)
+# cursor.execute("CREATE TABLE dining AS SELECT cuisines.name, cuisine, diet, food_type, open, close from cuisines inner join meal_types on cuisines.name = meal_types.name inner join hours on hours.name = meal_types.name inner join diets on hours.name = meal_types.name")
 
 """
 TEST
 """
 # output = []
-# cursor.execute("SELECT name FROM dining WHERE cuisine = 'italian' AND food_type = 'lunch' AND 14 BETWEEN open AND close")
+# cursor.execute("SELECT open FROM dining WHERE name = 'starbucks'")
 # result = cursor.fetchall()
 # for r in result:
 #     if r not in output:
